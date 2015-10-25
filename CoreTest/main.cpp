@@ -1,17 +1,14 @@
-#include "mainwindow.h"
-#include <QApplication>
+#include <QCoreApplication>
+#include <QDebug>
 #include <qsingleinstance.h>
-
-#include <QMessageBox>
 
 #define USE_EXEC
 
 int main(int argc, char *argv[])
 {
-	QApplication a(argc, argv);
+	QCoreApplication a(argc, argv);
 
 	QSingleInstance instance;
-	MainWindow *w = NULL;
 
 #ifndef USE_EXEC
 	if(instance.process()) {
@@ -24,20 +21,16 @@ int main(int argc, char *argv[])
 #ifdef USE_EXEC
 	instance.setStartupFunction([&]() -> int {
 #endif
-		w = new MainWindow(NULL);
-		instance.setNotifyWindow(w);
-		w->show();
+		qDebug() << "Instance running! Start another with -quit as first argument to exit";
 #ifdef USE_EXEC
 		return 0;
 	});
 #endif
 
-	QObject::connect(qApp, &QApplication::aboutToQuit, [&](){
-		delete w;
-	});
-
 	QObject::connect(&instance, &QSingleInstance::instanceMessage, [&](QStringList args){
-		QMessageBox::information(w, "Message", args.join('\n'));
+		qDebug() << "New Instance:" << args;
+		if(args.size() > 1 && args[1] == "-quit")
+			qApp->quit();
 	});
 
 #ifdef USE_EXEC
@@ -46,3 +39,4 @@ int main(int argc, char *argv[])
 	return a.exec();
 #endif
 }
+

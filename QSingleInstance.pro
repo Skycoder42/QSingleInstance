@@ -1,4 +1,6 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
-	WidgetTest
+	WidgetTest \
+    GuiTest \
+    CoreTest

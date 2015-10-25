@@ -1,5 +1,6 @@
 #include "clientinstance.h"
 #include <QtEndian>
+#include <QCoreApplication>
 
 ClientInstance::ClientInstance(QLocalSocket *socket, QSingleInstancePrivate *parent) :
 	QObject(parent),
@@ -16,9 +17,11 @@ ClientInstance::ClientInstance(QLocalSocket *socket, QSingleInstancePrivate *par
 
 ClientInstance::~ClientInstance()
 {
-	if(this->socket->isOpen())
-		this->socket->close();
-	this->socket->deleteLater();
+	if(this->instance->isRunning) {
+		if(this->socket->isOpen())
+			this->socket->close();
+		this->socket->deleteLater();
+	}
 }
 
 void ClientInstance::newData()

@@ -88,15 +88,19 @@ int QSingleInstance::singleExec()
 {
 	Q_D(QSingleInstance);
 	d->isRunning = true;
+	int res = 0;
 	d->startInstance();
 
 	if(d->isMaster) {
 		d->startFunc();
-		return qApp->exec();
+		res = qApp->exec();
 	} else {
 		d->sendArgs();
-		return qApp->exec();
+		res = qApp->exec();
 	}
+
+	d->isRunning = false;
+	return res;
 }
 
 bool QSingleInstance::setInstanceID(QString instanceID)
