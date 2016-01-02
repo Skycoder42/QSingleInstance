@@ -12,13 +12,6 @@ Window {
         }
     }
 
-    MouseArea {
-        anchors.fill: parent
-        onClicked: {
-            Qt.quit();
-        }
-    }
-
     Text {
         text: qsTr("Hello World")
         anchors.centerIn: parent

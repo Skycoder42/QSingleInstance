@@ -84,13 +84,14 @@ void QSingleInstancePrivate::recover(int exitCode)
 
 bool QSingleInstancePrivate::recoverAction()
 {
+	this->client->deleteLater();
+	this->client = NULL;
+
 	if(this->tryRecover) {
 		PRINT_STATUS(QStringLiteral("Trying to create a new master instance..."));
 		if(!QFile::exists(this->lockName) || QFile::remove(this->lockName)) {
 			this->startInstance();
 			if(this->isMaster) {
-				this->client->deleteLater();
-				this->client = NULL;
 				PRINT_STATUS(QStringLiteral("Recovery Successful - This instance is now the master"));
 				return true;
 			}
