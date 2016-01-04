@@ -58,12 +58,10 @@ void QSingleInstancePrivate::startInstance()
 		this->server = new QLocalServer(this);
 		bool isListening = this->server->listen(this->fullId);
 
-#ifdef Q_OS_UNIX
 		if (!isListening && this->server->serverError() == QAbstractSocket::AddressInUseError) {
-			QFile::remove(QDir::temp().absoluteFilePath(this->fullId));
-			isListening = this->server->listen(this->fullId);
+			if(QLocalServer::removeServer(this->fullId))
+				isListening = this->server->listen(this->fullId);
 		}
-#endif
 
 		if(!isListening) {
 			PRINT_WARNING(QStringLiteral("Failed to listen for other instances with error \"%1\"")
