@@ -99,7 +99,7 @@ int QSingleInstance::singleExec()
 		res = qApp->exec();
 	}
 
-	d->isRunning = false;
+	d->isRunning = false;//TODO add stop instance
 	return res;
 }
 
