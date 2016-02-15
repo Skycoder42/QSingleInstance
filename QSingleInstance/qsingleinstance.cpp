@@ -3,6 +3,8 @@
 #include <QCoreApplication>
 #include <QDir>
 
+Q_LOGGING_CATEGORY(logQSingleInstance, "QSingleInstance")
+
 QSingleInstance::QSingleInstance(QObject *parent) :
 	QObject(parent),
 	d_ptr(new QSingleInstancePrivate(this))
@@ -61,6 +63,11 @@ void QSingleInstance::setNotifyWindow(QWidget *widget)
 
 bool QSingleInstance::process()
 {
+	return this->process(QCoreApplication::arguments());
+}
+
+bool QSingleInstance::process(const QStringList &arguments)
+{
 	Q_D(QSingleInstance);
 	d->startInstance();
 
@@ -70,7 +77,7 @@ bool QSingleInstance::process()
 		d->client = new QLocalSocket(this);
 		d->client->connectToServer(d->fullId, QIODevice::ReadWrite);
 		if(d->client->waitForConnected(5000)) {
-			d->clientConnected();
+			d->performSend(arguments);
 			if(d->client->waitForBytesWritten(5000) && d->client->waitForReadyRead(5000)) {
 				if(d->client->read(ACK.size()) == ACK) {
 					d->client->disconnect();
@@ -84,14 +91,17 @@ bool QSingleInstance::process()
 	}
 }
 
-int QSingleInstance::singleExec()
+int QSingleInstance::singleExec(bool autoClose)
 {
 	Q_D(QSingleInstance);
+	Q_ASSERT_X(!d->isRunning, Q_FUNC_INFO, "Nested call detected!");
 	d->isRunning = true;
 	int res = 0;
 	d->startInstance();
 
 	if(d->isMaster) {
+		if(autoClose)
+			connect(qApp, &QCoreApplication::aboutToQuit, this, &QSingleInstance::closeInstance);
 		d->startFunc();
 		res = qApp->exec();
 	} else {
@@ -99,20 +109,30 @@ int QSingleInstance::singleExec()
 		res = qApp->exec();
 	}
 
-	d->isRunning = false;//TODO add stop instance
+	d->isRunning = false;
 	return res;
+}
+
+void QSingleInstance::closeInstance()
+{
+	Q_D(QSingleInstance);
+	if(d->isMaster) {
+		d->server->close();
+		d->server->deleteLater();
+		d->server = NULL;
+		d->lockFile->unlock();
+		d->isMaster = false;
+	}
 }
 
 bool QSingleInstance::setInstanceID(QString instanceID)
 {
 	Q_D(QSingleInstance);
-	if(d->isRunning)
+	if(d->isRunning || d->isMaster)
 		return false;
 	else if(instanceID != d->fullId){
 		d->fullId = instanceID;
-		d->lockName = QDir::temp().absoluteFilePath(d->fullId + QStringLiteral("-lockfile"));
-		d->lockFile.reset(new QLockFile(d->lockName));
-		d->lockFile->setStaleLockTime(0);
+		d->resetLockFile();
 		emit instanceIDChanged(instanceID);
 	}
 

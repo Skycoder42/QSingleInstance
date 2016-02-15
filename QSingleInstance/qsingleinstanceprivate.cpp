@@ -3,6 +3,9 @@
 #include <QRegularExpression>
 #include <QDir>
 #include <QtEndian>
+#ifdef QT_WIDGETS_LIB
+#include <QApplication>
+#endif
 #include "clientinstance.h"
 
 #ifdef Q_OS_WIN
@@ -32,9 +35,9 @@ QSingleInstancePrivate::QSingleInstancePrivate(QSingleInstance *q_ptr) :
 #ifdef Q_OS_WIN
 	this->fullId = this->fullId.toLower();
 #endif
-	this->fullId.remove(QRegularExpression("[^a-zA-Z0-9_]"));
+	this->fullId.remove(QRegularExpression(QStringLiteral("[^a-zA-Z0-9_]")));
 	this->fullId.truncate(8);
-	this->fullId.prepend("qsingleinstance-");
+	this->fullId.prepend(QStringLiteral("qsingleinstance-"));
 	QByteArray hashBase = (QCoreApplication::organizationName() + QLatin1Char('_') + QCoreApplication::applicationName()).toUtf8();
 	this->fullId += QLatin1Char('-') + QString::number(qChecksum(hashBase.data(), hashBase.size()), 16) + QLatin1Char('-');
 
@@ -46,6 +49,11 @@ QSingleInstancePrivate::QSingleInstancePrivate(QSingleInstance *q_ptr) :
 	this->fullId += QString::number(::getuid(), 16);
 #endif
 
+	this->resetLockFile();
+}
+
+void QSingleInstancePrivate::resetLockFile()
+{
 	this->lockName = QDir::temp().absoluteFilePath(this->fullId + QStringLiteral("-lockfile"));
 	this->lockFile.reset(new QLockFile(this->lockName));
 	this->lockFile->setStaleLockTime(0);
@@ -53,6 +61,10 @@ QSingleInstancePrivate::QSingleInstancePrivate(QSingleInstance *q_ptr) :
 
 void QSingleInstancePrivate::startInstance()
 {
+	Q_ASSERT_X(this->isMaster == this->lockFile->isLocked(), Q_FUNC_INFO, "Lockfile-state is not as expected");
+	if(this->isMaster)
+		return;
+
 	this->isMaster = this->lockFile->tryLock();
 	if(this->isMaster) {
 		this->server = new QLocalServer(this);
@@ -64,8 +76,8 @@ void QSingleInstancePrivate::startInstance()
 		}
 
 		if(!isListening) {
-			PRINT_WARNING(QStringLiteral("Failed to listen for other instances with error \"%1\"")
-						  .arg(this->server->errorString()));
+			qpCWarning(logQSingleInstance, QStringLiteral("Failed to listen for other instances with error \"%1\"")
+					   .arg(this->server->errorString()));
 		} else {
 			connect(this->server, &QLocalServer::newConnection, this, &QSingleInstancePrivate::newConnection);
 		}
@@ -74,6 +86,11 @@ void QSingleInstancePrivate::startInstance()
 
 void QSingleInstancePrivate::recover(int exitCode)
 {
+	if(this->lockdownTimer) {
+		this->lockdownTimer->stop();
+		this->lockdownTimer->deleteLater();
+	}
+
 	if(this->recoverAction())
 		this->startFunc();
 	else
@@ -86,15 +103,15 @@ bool QSingleInstancePrivate::recoverAction()
 	this->client = NULL;
 
 	if(this->tryRecover) {
-		PRINT_STATUS(QStringLiteral("Trying to create a new master instance..."));
+		qCInfo(logQSingleInstance, "Trying to create a new master instance...");
 		if(!QFile::exists(this->lockName) || QFile::remove(this->lockName)) {
 			this->startInstance();
 			if(this->isMaster) {
-				PRINT_STATUS(QStringLiteral("Recovery Successful - This instance is now the master"));
+				qCInfo(logQSingleInstance, "Recovery Successful - This instance is now the master.");
 				return true;
 			}
 		}
-		PRINT_WARNING(QStringLiteral("Failed to create new master instance. Program will now exit"));
+		qCWarning(logQSingleInstance, "Failed to create new master instance. The application cannot recover!");
 	}
 	return false;
 }
@@ -116,7 +133,7 @@ void QSingleInstancePrivate::sendArgs()
 	this->lockdownTimer->setInterval(5000);
 	this->lockdownTimer->setSingleShot(true);
 	connect(this->lockdownTimer, &QTimer::timeout, this, [this](){
-		PRINT_WARNING(QStringLiteral("Master did not respond in time"));
+		qCWarning(logQSingleInstance, "Master did not respond in time");
 		this->recover(QLocalSocket::SocketTimeoutError);
 	});
 	this->lockdownTimer->start();
@@ -124,10 +141,13 @@ void QSingleInstancePrivate::sendArgs()
 
 void QSingleInstancePrivate::clientConnected()
 {
-	if(this->lockdownTimer)
-		this->lockdownTimer->start();
+	this->lockdownTimer->start();
+	this->performSend(QCoreApplication::arguments());
+}
 
-	QByteArray sendData = QCoreApplication::arguments().join(QLatin1Char('\n')).toUtf8();
+void QSingleInstancePrivate::performSend(const QStringList &arguments)
+{
+	QByteArray sendData = arguments.join(SPLIT_CHAR).toUtf8();
 	qint32 sendSize = qToLittleEndian<qint32>(sendData.size());
 	this->client->write((char*)&sendSize, sizeof(qint32));
 	this->client->write(sendData);
@@ -137,11 +157,12 @@ void QSingleInstancePrivate::sendResultReady()
 {
 	if(this->client->bytesAvailable() >= ACK.size()) {
 		if(this->client->read(ACK.size()) == ACK) {
+			this->lockdownTimer->stop();
 			this->client->disconnect();
 			this->client->close();
 			qApp->quit();
 		} else {
-			PRINT_WARNING(QStringLiteral("Master didn't ackknowledge the sent arguments"));
+			qCWarning(logQSingleInstance, "Master didn't ackknowledge the sent arguments");
 			this->recover(QLocalSocket::UnknownSocketError);
 		}
 	} else
@@ -150,8 +171,8 @@ void QSingleInstancePrivate::sendResultReady()
 
 void QSingleInstancePrivate::clientError(QLocalSocket::LocalSocketError error)
 {
-	PRINT_WARNING(QStringLiteral("Failed to transfer arguments to master with error \"%1\"")
-				  .arg(this->client->errorString()));
+	qpCWarning(logQSingleInstance, QStringLiteral("Failed to transfer arguments to master with error \"%1\"")
+			   .arg(this->client->errorString()));
 	this->recover(error);
 }
 
@@ -179,6 +200,7 @@ void QSingleInstancePrivate::newArgsReceived(const QStringList &args)
 		this->notifyWidget->setWindowState(this->notifyWidget->windowState() & ~ Qt::WindowMinimized);
 		this->notifyWidget->show();
 		this->notifyWidget->raise();
+		QApplication::alert(this->notifyWidget);
 		this->notifyWidget->activateWindow();
 	}
 #endif

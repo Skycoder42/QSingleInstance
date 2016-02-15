@@ -8,35 +8,40 @@
 int main(int argc, char *argv[])
 {
 	QGuiApplication app(argc, argv);
-
 	QSingleInstance instance;
-	QQmlApplicationEngine *engine;
-#ifndef USE_EXEC
-	if(instance.process()) {
-		if(!instance.isMaster())
-			return 0;
-	} else
-		return -1;
-#endif
+
 
 #ifdef USE_EXEC
+	QQmlApplicationEngine *engine;
+
 	instance.setStartupFunction([&]() -> int {
-#endif
 		engine = new QQmlApplicationEngine(NULL);
 		engine->rootContext()->setContextProperty("instance", &instance);
 		engine->load(QUrl(QStringLiteral("qrc:/main.qml")));
-#ifdef USE_EXEC
+
+		instance.setNotifyWindow(QGuiApplication::topLevelWindows().first());
+
 		return 0;
 	});
-#endif
 
 	QObject::connect(qApp, &QGuiApplication::aboutToQuit, [&](){
 		delete engine;
 	});
 
-#ifdef USE_EXEC
 	return instance.singleExec();
 #else
+	if(instance.process()) {
+		if(!instance.isMaster())
+			return 0;
+	} else
+		return -1;
+
+	QQmlApplicationEngine engine;
+	engine.rootContext()->setContextProperty("instance", &instance);
+	engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
+
+	instance.setNotifyWindow(QGuiApplication::topLevelWindows().first());
+
 	return app.exec();
 #endif
 }

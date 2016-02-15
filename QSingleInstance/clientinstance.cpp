@@ -30,17 +30,18 @@ void ClientInstance::newData()
 		if(this->socket->bytesAvailable() >= sizeof(qint32)) {
 			qint64 read = this->socket->read((char*)&(this->argSizeLeft), sizeof(qint32));
 			if(read != sizeof(qint32)) {
-				PRINT_WARNING(QStringLiteral("Client lost. Client send invalid data"));
+				qCWarning(logQSingleInstance, "Client lost. Client send invalid data");
 				this->deleteLater();
 				return;
 			}
 			this->argSizeLeft = qFromLittleEndian<qint32>(this->argSizeLeft);
+			this->argData.reserve(this->argSizeLeft);
 		}
 	}
 	if(this->argSizeLeft != -1) {
 		this->argData += this->socket->readAll();
 		if(this->argData.size() >= this->argSizeLeft) {
-			QStringList arguments = QString::fromUtf8(this->argData).split(QLatin1Char('\n'));
+			QStringList arguments = QString::fromUtf8(this->argData).split(SPLIT_CHAR);
 			this->socket->write(ACK);
 			QTimer::singleShot(5000, this->socket, &QLocalSocket::disconnectFromServer);
 			this->instance->newArgsReceived(arguments);
@@ -50,7 +51,8 @@ void ClientInstance::newData()
 
 void ClientInstance::socketError(QLocalSocket::LocalSocketError)
 {
-	PRINT_WARNING(QStringLiteral("Failed to receive arguments from client with error \"%1\"")
-				  .arg(this->socket->errorString()));
+	qpCWarning(logQSingleInstance, QStringLiteral("Failed to receive arguments from client with error \"%1\"")
+			   .arg(this->socket->errorString()));
+	this->deleteLater();
 }
 

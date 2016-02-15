@@ -17,10 +17,9 @@
 #endif
 #include "qsingleinstance.h"
 
-#define PRINT_DEBUG(message) qDebug(qPrintable(QStringLiteral("QSingleInstance: ") + (message)))
-#define PRINT_STATUS(message) qInfo(qPrintable(QStringLiteral("QSingleInstance: ") + (message)))
-#define PRINT_WARNING(message) qWarning(qPrintable(QStringLiteral("QSingleInstance: ") + (message)))
+#define qpCWarning(cat, message) qCWarning(cat, qPrintable(message))
 #define ACK QByteArray("ACK")
+#define SPLIT_CHAR QLatin1Char('\n')
 
 class QSingleInstancePrivate : public QObject
 {
@@ -50,6 +49,8 @@ public:
 
 	QSingleInstancePrivate(QSingleInstance *q_ptr);
 
+	void resetLockFile();
+
 public slots:
 	void startInstance();
 	void recover(int exitCode);
@@ -57,6 +58,7 @@ public slots:
 
 	void sendArgs();
 	void clientConnected();
+	void performSend(const QStringList &arguments);
 	void sendResultReady();
 	void clientError(QLocalSocket::LocalSocketError error);
 

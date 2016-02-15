@@ -2,6 +2,7 @@
 #define QSINGLEINSTANCEBASE
 
 #include <QObject>
+#include <QLoggingCategory>
 #include <functional>
 #ifdef QT_GUI_LIB
 class QWindow;
@@ -45,10 +46,15 @@ public:
 
 	//! Starts the instance if master or sends arguments to the master
 	bool process();
+	//! Starts the instance if master or sends custom arguments to the master
+	bool process(const QStringList &arguments);
 
 public slots:
-	//! Starts the instance if master or sends arguments to the master and runs the QCoreApplication
-	int singleExec();
+	//! Starts the instance if master or sends arguments to the master and runs the Application
+	int singleExec(bool autoClose = true);
+
+	//! Stops the singleinstance (but not the application)
+	void closeInstance();
 
 	//! WRITE-Accessor for QSingleInstance::instanceID
 	bool setInstanceID(QString instanceID);
@@ -68,6 +74,8 @@ private:
 	QSingleInstancePrivate *d_ptr;
 	Q_DECLARE_PRIVATE(QSingleInstance)
 };
+
+Q_DECLARE_LOGGING_CATEGORY(logQSingleInstance)
 
 #endif // QSINGLEINSTANCEBASE
 
