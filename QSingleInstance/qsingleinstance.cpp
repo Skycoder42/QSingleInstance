@@ -73,7 +73,7 @@ bool QSingleInstance::process(const QStringList &arguments)
 
 	if(d->isMaster)
 		return true;
-	else {
+	else if(!arguments.isEmpty()) {
 		d->client = new QLocalSocket(this);
 		d->client->connectToServer(d->fullId, QIODevice::ReadWrite);
 		if(d->client->waitForConnected(5000)) {
@@ -88,7 +88,8 @@ bool QSingleInstance::process(const QStringList &arguments)
 		}
 
 		return d->recoverAction();
-	}
+	} else
+		return false;
 }
 
 int QSingleInstance::singleExec(bool autoClose)
