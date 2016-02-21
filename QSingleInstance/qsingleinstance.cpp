@@ -89,7 +89,7 @@ bool QSingleInstance::process(const QStringList &arguments)
 
 		return d->recoverAction();
 	} else
-		return false;
+		return true;
 }
 
 int QSingleInstance::singleExec(bool autoClose)
