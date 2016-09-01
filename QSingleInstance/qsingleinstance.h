@@ -23,7 +23,7 @@ class QSingleInstance : public QObject //TODO doc
 	Q_PROPERTY(bool autoRecovery READ isAutoRecoveryActive WRITE setAutoRecovery NOTIFY autoRecoveryChanged)
 public:
 	//! Constructor
-	QSingleInstance(QObject *parent = NULL);
+	QSingleInstance(QObject *parent = nullptr);
 
 	//! Specifies whether this instance is master or not
 	Q_INVOKABLE bool isMaster() const;
