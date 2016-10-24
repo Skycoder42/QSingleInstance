@@ -10,6 +10,9 @@
 
 #ifdef Q_OS_WIN
 #include <qt_windows.h>
+#else
+#include <unistd.h>
+#include <sys/types.h>
 #endif
 
 QSingleInstancePrivate::QSingleInstancePrivate(QSingleInstance *q_ptr) :
