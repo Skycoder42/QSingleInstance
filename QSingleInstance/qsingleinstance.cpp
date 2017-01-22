@@ -28,7 +28,6 @@ bool QSingleInstance::isAutoRecoveryActive() const
 	return d->tryRecover;
 }
 
-//TODO provide version with object
 bool QSingleInstance::setStartupFunction(const std::function<int()> &function)
 {
 	Q_D(QSingleInstance);

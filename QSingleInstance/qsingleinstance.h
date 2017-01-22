@@ -13,7 +13,7 @@ class QWidget;
 
 class QSingleInstancePrivate;
 //! A class to provide a single instance application
-class QSingleInstance : public QObject //TODO doc
+class QSingleInstance : public QObject
 {
 	Q_OBJECT
 
