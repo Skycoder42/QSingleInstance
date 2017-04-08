@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
 
 
 #ifdef USE_EXEC
-	QQmlApplicationEngine *engine;
+	QQmlApplicationEngine *engine = nullptr;
 
 	instance.setStartupFunction([&]() -> int {
 		engine = new QQmlApplicationEngine(NULL);
@@ -25,7 +25,8 @@ int main(int argc, char *argv[])
 	});
 
 	QObject::connect(qApp, &QGuiApplication::aboutToQuit, [&](){
-		delete engine;
+		if(engine)
+			delete engine;
 	});
 
 	return instance.singleExec();

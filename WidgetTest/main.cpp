@@ -12,17 +12,18 @@ int main(int argc, char *argv[])
 	QSingleInstance instance;
 
 #ifdef USE_EXEC
-	MainWindow *w = NULL;
+	MainWindow *w = nullptr;
 
 	instance.setStartupFunction([&]() -> int {
-		w = new MainWindow(NULL);
+		w = new MainWindow(nullptr);
 		instance.setNotifyWindow(w);
 		w->show();
 		return 0;
 	});
 
 	QObject::connect(qApp, &QApplication::aboutToQuit, [&](){
-		delete w;
+		if(w)
+			delete w;
 	});
 
 	QObject::connect(&instance, &QSingleInstance::instanceMessage, [&](QStringList args){

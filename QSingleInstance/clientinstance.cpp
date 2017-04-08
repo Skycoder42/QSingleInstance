@@ -11,8 +11,8 @@ ClientInstance::ClientInstance(QLocalSocket *socket, QSingleInstancePrivate *par
 	argData()
 {
 	connect(socket, &QLocalSocket::readyRead, this, &ClientInstance::newData);
-	connect(socket, SIGNAL(error(QLocalSocket::LocalSocketError)),
-			this, SLOT(socketError(QLocalSocket::LocalSocketError)));
+	connect(socket, QOverload<QLocalSocket::LocalSocketError>::of(&QLocalSocket::error),
+			this, &ClientInstance::socketError);
 	connect(socket, &QLocalSocket::disconnected, this, &ClientInstance::deleteLater);
 }
 
@@ -50,8 +50,10 @@ void ClientInstance::newData()
 	}
 }
 
-void ClientInstance::socketError(QLocalSocket::LocalSocketError)
+void ClientInstance::socketError(QLocalSocket::LocalSocketError error)
 {
+	if(error == QLocalSocket::PeerClosedError)
+		return;
 	qCWarning(logQSingleInstance) << "Failed to receive arguments from client with error:"
 								  << socket->errorString();
 	deleteLater();

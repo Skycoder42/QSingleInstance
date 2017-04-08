@@ -15,7 +15,7 @@ public:
 
 private slots:
 	void newData();
-	void socketError(QLocalSocket::LocalSocketError);
+	void socketError(QLocalSocket::LocalSocketError error);
 
 private:
 	QSingleInstancePrivate *instance;

@@ -206,6 +206,7 @@ void QSingleInstancePrivate::newArgsReceived(const QStringList &args)
 		notifyWidget->activateWindow();
 	}
 #endif
-	emit q->instanceMessage(args);
+	QMetaObject::invokeMethod(q, "instanceMessage", Qt::QueuedConnection,
+							  Q_ARG(QStringList, args));
 }
 
