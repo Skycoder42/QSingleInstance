@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QLocalSocket>
+#include <QDataStream>
 #include "qsingleinstance_p.h"
 
 class ClientInstance : public QObject
@@ -20,9 +21,7 @@ private slots:
 private:
 	QSingleInstancePrivate *instance;
 	QLocalSocket *socket;
-
-	qint32 argSizeLeft;
-	QByteArray argData;
+	QDataStream stream;
 };
 
 #endif // CLIENTINSTANCE_H

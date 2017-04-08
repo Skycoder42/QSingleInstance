@@ -18,7 +18,6 @@
 #include "qsingleinstance.h"
 
 #define ACK QByteArray("ACK")
-#define SPLIT_CHAR QLatin1Char('\n')
 
 class QSingleInstancePrivate : public QObject
 {

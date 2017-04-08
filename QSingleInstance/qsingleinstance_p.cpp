@@ -3,6 +3,7 @@
 #include <QRegularExpression>
 #include <QDir>
 #include <QtEndian>
+#include <QDataStream>
 #ifdef QT_WIDGETS_LIB
 #include <QApplication>
 #endif
@@ -150,10 +151,9 @@ void QSingleInstancePrivate::clientConnected()
 
 void QSingleInstancePrivate::performSend(const QStringList &arguments)
 {
-	QByteArray sendData = arguments.join(SPLIT_CHAR).toUtf8();
-	qint32 sendSize = qToLittleEndian<qint32>(sendData.size());
-	client->write((char*)&sendSize, sizeof(qint32));
-	client->write(sendData);
+	QDataStream stream(client);
+	stream << arguments;
+	client->flush();
 }
 
 void QSingleInstancePrivate::sendResultReady()
