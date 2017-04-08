@@ -7,7 +7,7 @@ CONFIG -= app_bundle
 
 TEMPLATE = app
 
-include(../QSingleInstance/qsingleinstance.pri)
+include(../de_skycoder42_qsingleinstance.pri)
 
 SOURCES += main.cpp
 

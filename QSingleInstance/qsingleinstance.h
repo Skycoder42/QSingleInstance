@@ -21,6 +21,7 @@ class QSingleInstance : public QObject
 	Q_PROPERTY(QString instanceID READ instanceID WRITE setInstanceID NOTIFY instanceIDChanged)
 	//! Specifies whether the instance should try to recover the application or not
 	Q_PROPERTY(bool autoRecovery READ isAutoRecoveryActive WRITE setAutoRecovery NOTIFY autoRecoveryChanged)
+
 public:
 	//! Constructor
 	QSingleInstance(QObject *parent = nullptr);
@@ -71,8 +72,7 @@ signals:
 	void autoRecoveryChanged(bool autoRecovery);
 
 private:
-	QSingleInstancePrivate *d_ptr;
-	Q_DECLARE_PRIVATE(QSingleInstance)
+	QSingleInstancePrivate *d;
 };
 
 Q_DECLARE_LOGGING_CATEGORY(logQSingleInstance)

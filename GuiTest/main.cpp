@@ -1,7 +1,7 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
-#include <qsingleinstance.h>
+#include "qsingleinstance.h"
 
 #define USE_EXEC
 

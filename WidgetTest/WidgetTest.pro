@@ -11,15 +11,15 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = QSingleInstance
 TEMPLATE = app
 
-include(../QSingleInstance/qsingleinstance.pri)
+include(../de_skycoder42_qsingleinstance.pri)
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+		mainwindow.cpp
 
 HEADERS  += mainwindow.h
 
 FORMS    += mainwindow.ui
 
 CONFIG += mobility
-MOBILITY = 
+MOBILITY =
 

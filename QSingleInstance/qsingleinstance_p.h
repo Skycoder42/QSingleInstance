@@ -17,16 +17,15 @@
 #endif
 #include "qsingleinstance.h"
 
-#define qpCWarning(cat, message) qCWarning(cat, qPrintable(message))
 #define ACK QByteArray("ACK")
 #define SPLIT_CHAR QLatin1Char('\n')
 
 class QSingleInstancePrivate : public QObject
 {
 	Q_OBJECT
+
 public:
-	QSingleInstance *q_ptr;
-	Q_DECLARE_PUBLIC(QSingleInstance)
+	QSingleInstance *q;
 
 	QString fullId;
 	QString lockName;

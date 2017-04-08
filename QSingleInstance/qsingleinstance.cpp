@@ -1,5 +1,5 @@
 #include "qsingleinstance.h"
-#include "qsingleinstanceprivate.h"
+#include "qsingleinstance_p.h"
 #include <QCoreApplication>
 #include <QDir>
 
@@ -7,30 +7,26 @@ Q_LOGGING_CATEGORY(logQSingleInstance, "QSingleInstance")
 
 QSingleInstance::QSingleInstance(QObject *parent) :
 	QObject(parent),
-	d_ptr(new QSingleInstancePrivate(this))
+	d(new QSingleInstancePrivate(this))
 {}
 
 QString QSingleInstance::instanceID() const
 {
-	const Q_D(QSingleInstance);
 	return d->fullId;
 }
 
 bool QSingleInstance::isMaster() const
 {
-	const Q_D(QSingleInstance);
 	return d->isMaster;
 }
 
 bool QSingleInstance::isAutoRecoveryActive() const
 {
-	const Q_D(QSingleInstance);
 	return d->tryRecover;
 }
 
 bool QSingleInstance::setStartupFunction(const std::function<int()> &function)
 {
-	Q_D(QSingleInstance);
 	if(d->isRunning)
 		return false;
 	else {
@@ -42,10 +38,9 @@ bool QSingleInstance::setStartupFunction(const std::function<int()> &function)
 #ifdef QT_GUI_LIB
 void QSingleInstance::setNotifyWindow(QWindow *window)
 {
-	Q_D(QSingleInstance);
 	d->notifyWindow = window;
 #ifdef QT_WIDGETS_LIB
-	d->notifyWidget = NULL;
+	d->notifyWidget = nullptr;
 #endif
 }
 #endif
@@ -53,22 +48,20 @@ void QSingleInstance::setNotifyWindow(QWindow *window)
 #ifdef QT_WIDGETS_LIB
 void QSingleInstance::setNotifyWindow(QWidget *widget)
 {
-	Q_D(QSingleInstance);
 	d->notifyWidget = widget;
 #ifdef QT_GUI_LIB
-	d->notifyWindow = NULL;
+	d->notifyWindow = nullptr;
 #endif
 }
 #endif
 
 bool QSingleInstance::process()
 {
-	return this->process(QCoreApplication::arguments());
+	return process(QCoreApplication::arguments());
 }
 
 bool QSingleInstance::process(const QStringList &arguments)
 {
-	Q_D(QSingleInstance);
 	d->startInstance();
 
 	if(d->isMaster)
@@ -94,7 +87,6 @@ bool QSingleInstance::process(const QStringList &arguments)
 
 int QSingleInstance::singleExec(bool autoClose)
 {
-	Q_D(QSingleInstance);
 	Q_ASSERT_X(!d->isRunning, Q_FUNC_INFO, "Nested call detected!");
 	d->isRunning = true;
 	int res = 0;
@@ -116,11 +108,10 @@ int QSingleInstance::singleExec(bool autoClose)
 
 void QSingleInstance::closeInstance()
 {
-	Q_D(QSingleInstance);
 	if(d->isMaster) {
 		d->server->close();
 		d->server->deleteLater();
-		d->server = NULL;
+		d->server = nullptr;
 		d->lockFile->unlock();
 		d->isMaster = false;
 	}
@@ -128,7 +119,6 @@ void QSingleInstance::closeInstance()
 
 bool QSingleInstance::setInstanceID(QString instanceID)
 {
-	Q_D(QSingleInstance);
 	if(d->isRunning || d->isMaster)
 		return false;
 	else if(instanceID != d->fullId){
@@ -142,7 +132,6 @@ bool QSingleInstance::setInstanceID(QString instanceID)
 
 void QSingleInstance::setAutoRecovery(bool autoRecovery)
 {
-	Q_D(QSingleInstance);
 	if(d->tryRecover != autoRecovery) {
 		d->tryRecover = autoRecovery;
 		emit autoRecoveryChanged(autoRecovery);

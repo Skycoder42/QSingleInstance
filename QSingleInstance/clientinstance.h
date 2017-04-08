@@ -3,11 +3,12 @@
 
 #include <QObject>
 #include <QLocalSocket>
-#include "qsingleinstanceprivate.h"
+#include "qsingleinstance_p.h"
 
 class ClientInstance : public QObject
 {
 	Q_OBJECT
+
 public:
 	explicit ClientInstance(QLocalSocket *socket, QSingleInstancePrivate *parent);
 	~ClientInstance();

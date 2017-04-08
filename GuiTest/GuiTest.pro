@@ -3,7 +3,7 @@ TEMPLATE = app
 QT += qml quick
 CONFIG += c++11
 
-include(../QSingleInstance/qsingleinstance.pri)
+include(../de_skycoder42_qsingleinstance.pri)
 
 SOURCES += main.cpp
 
