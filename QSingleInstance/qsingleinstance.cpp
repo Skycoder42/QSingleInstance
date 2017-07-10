@@ -93,13 +93,18 @@ int QSingleInstance::singleExec(bool autoClose)
 	d->startInstance();
 
 	if(d->isMaster) {
-		if(autoClose)
-			connect(qApp, &QCoreApplication::aboutToQuit, this, &QSingleInstance::closeInstance);
-		d->startFunc();
-		res = qApp->exec();
+		res = d->startFunc();
+		if(res == EXIT_SUCCESS) {
+			if(autoClose)
+				connect(qApp, &QCoreApplication::aboutToQuit, this, &QSingleInstance::closeInstance);
+			res = qApp->exec();
+		} else if(autoClose)
+			closeInstance();
 	} else {
+		d->autoClose = autoClose; //store in case of recovery
 		d->sendArgs();
 		res = qApp->exec();
+		d->autoClose = false; //and reset
 	}
 
 	d->isRunning = false;

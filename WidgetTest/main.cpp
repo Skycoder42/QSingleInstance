@@ -10,6 +10,7 @@ int main(int argc, char *argv[])
 {
 	QApplication a(argc, argv);
 	QSingleInstance instance;
+	instance.setAutoRecovery(true);
 
 #ifdef USE_EXEC
 	MainWindow *w = nullptr;

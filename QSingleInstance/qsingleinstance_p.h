@@ -32,6 +32,7 @@ public:
 	QScopedPointer<QLockFile> lockFile;
 	bool isMaster;
 	bool tryRecover;
+	bool autoClose;
 
 	bool isRunning;
 	std::function<int()> startFunc;

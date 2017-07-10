@@ -25,6 +25,7 @@ QSingleInstancePrivate::QSingleInstancePrivate(QSingleInstance *q_ptr) :
 	lockFile(nullptr),
 	isMaster(false),
 	tryRecover(false),
+	autoClose(false),
 	isRunning(false),
 	startFunc([]()->int{return 0;}),
 #ifdef QT_GUI_LIB
@@ -95,9 +96,14 @@ void QSingleInstancePrivate::recover(int exitCode)
 		lockdownTimer->deleteLater();
 	}
 
-	if(recoverAction())
-		startFunc();
-	else
+	if(recoverAction()) {
+		auto res = startFunc();
+		if(res == EXIT_SUCCESS) {
+			if(autoClose)
+				connect(qApp, &QCoreApplication::aboutToQuit, q, &QSingleInstance::closeInstance);
+		} else if(autoClose)
+			q->closeInstance();
+	 } else
 		qApp->exit(exitCode);
 }
 
