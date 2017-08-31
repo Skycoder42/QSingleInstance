@@ -2,13 +2,23 @@
 #include "qsingleinstance_p.h"
 #include <QCoreApplication>
 #include <QDir>
+#include <QRegularExpression>
+
+#ifdef Q_OS_WIN
+#include <qt_windows.h>
+#else
+#include <unistd.h>
+#include <sys/types.h>
+#endif
 
 Q_LOGGING_CATEGORY(logQSingleInstance, "QSingleInstance")
 
 QSingleInstance::QSingleInstance(QObject *parent) :
 	QObject(parent),
 	d(new QSingleInstancePrivate(this))
-{}
+{
+	resetInstanceID();
+}
 
 QString QSingleInstance::instanceID() const
 {
@@ -23,6 +33,11 @@ bool QSingleInstance::isMaster() const
 bool QSingleInstance::isAutoRecoveryActive() const
 {
 	return d->tryRecover;
+}
+
+bool QSingleInstance::isGobal() const
+{
+	return d->global;
 }
 
 bool QSingleInstance::setStartupFunction(const std::function<int()> &function)
@@ -126,7 +141,7 @@ bool QSingleInstance::setInstanceID(QString instanceID)
 {
 	if(d->isRunning || d->isMaster)
 		return false;
-	else if(instanceID != d->fullId){
+	else if(instanceID != d->fullId) {
 		d->fullId = instanceID;
 		d->resetLockFile();
 		emit instanceIDChanged(instanceID);
@@ -135,10 +150,52 @@ bool QSingleInstance::setInstanceID(QString instanceID)
 	return true;
 }
 
+bool QSingleInstance::resetInstanceID()
+{
+	if(d->isRunning || d->isMaster)
+		return false;
+
+	d->fullId = QCoreApplication::applicationName();
+#ifdef Q_OS_WIN
+	d->fullId = fullId.toLower();
+#endif
+	d->fullId.remove(QRegularExpression(QStringLiteral("[^a-zA-Z0-9_]")));
+	d->fullId.truncate(8);
+	d->fullId.prepend(QStringLiteral("qsingleinstance-"));
+	QByteArray hashBase = (QCoreApplication::organizationName() + QLatin1Char('_') + QCoreApplication::applicationName()).toUtf8();
+	d->fullId += QLatin1Char('-') + QString::number(qChecksum(hashBase.data(), hashBase.size()), 16) + QLatin1Char('-');
+
+	if(!d->global) {
+#ifdef Q_OS_WIN
+	DWORD sessID;
+	if(ProcessIdToSessionId(GetCurrentProcessId(), &sessID))
+		d->fullId += QString::number(sessID, 16);
+#else
+	d->fullId += QString::number(::getuid(), 16);
+#endif
+	}
+
+	d->resetLockFile();
+	return true;
+}
+
 void QSingleInstance::setAutoRecovery(bool autoRecovery)
 {
 	if(d->tryRecover != autoRecovery) {
 		d->tryRecover = autoRecovery;
 		emit autoRecoveryChanged(autoRecovery);
+	}
+}
+
+bool QSingleInstance::setGlobal(bool global, bool recreateId)
+{
+	if(d->isRunning || d->isMaster)
+		return false;
+	else {
+		d->global = global;
+		if(recreateId)
+			return resetInstanceID();
+		else
+			return true;
 	}
 }

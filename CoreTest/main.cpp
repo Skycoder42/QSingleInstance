@@ -8,6 +8,7 @@ int main(int argc, char *argv[])
 {
 	QCoreApplication a(argc, argv);
 	QSingleInstance instance;
+	instance.setGlobal(true); //example for global access
 
 #ifdef USE_EXEC
 	instance.setStartupFunction([&]() -> int {

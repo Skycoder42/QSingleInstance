@@ -32,6 +32,7 @@ public:
 	QScopedPointer<QLockFile> lockFile;
 	bool isMaster;
 	bool tryRecover;
+	bool global;
 	bool autoClose;
 
 	bool isRunning;

@@ -9,22 +9,16 @@
 #endif
 #include "clientinstance.h"
 
-#ifdef Q_OS_WIN
-#include <qt_windows.h>
-#else
-#include <unistd.h>
-#include <sys/types.h>
-#endif
-
 QSingleInstancePrivate::QSingleInstancePrivate(QSingleInstance *q_ptr) :
 	QObject(q_ptr),
 	q(q_ptr),
-	fullId(QCoreApplication::applicationName()),
+	fullId(),
 	lockName(),
 	server(nullptr),
 	lockFile(nullptr),
 	isMaster(false),
 	tryRecover(false),
+	global(false),
 	autoClose(false),
 	isRunning(false),
 	startFunc([]()->int{return 0;}),
@@ -36,26 +30,7 @@ QSingleInstancePrivate::QSingleInstancePrivate(QSingleInstance *q_ptr) :
 #endif
 	client(nullptr),
 	lockdownTimer(nullptr)
-{
-#ifdef Q_OS_WIN
-	fullId = fullId.toLower();
-#endif
-	fullId.remove(QRegularExpression(QStringLiteral("[^a-zA-Z0-9_]")));
-	fullId.truncate(8);
-	fullId.prepend(QStringLiteral("qsingleinstance-"));
-	QByteArray hashBase = (QCoreApplication::organizationName() + QLatin1Char('_') + QCoreApplication::applicationName()).toUtf8();
-	fullId += QLatin1Char('-') + QString::number(qChecksum(hashBase.data(), hashBase.size()), 16) + QLatin1Char('-');
-
-#ifdef Q_OS_WIN
-	DWORD sessID;
-	if(ProcessIdToSessionId(GetCurrentProcessId(), &sessID))
-		fullId += QString::number(sessID, 16);
-#else
-	fullId += QString::number(::getuid(), 16);
-#endif
-
-	resetLockFile();
-}
+{}
 
 void QSingleInstancePrivate::resetLockFile()
 {
@@ -73,6 +48,10 @@ void QSingleInstancePrivate::startInstance()
 	isMaster = lockFile->tryLock();
 	if(isMaster) {
 		server = new QLocalServer(this);
+		if(global)
+			server->setSocketOptions(QLocalServer::WorldAccessOption);
+		else
+			server->setSocketOptions(QLocalServer::UserAccessOption);
 		bool isListening = server->listen(fullId);
 
 		if (!isListening && server->serverError() == QAbstractSocket::AddressInUseError) {

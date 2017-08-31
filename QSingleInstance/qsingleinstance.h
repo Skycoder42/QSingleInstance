@@ -18,9 +18,11 @@ class QSingleInstance : public QObject
 	Q_OBJECT
 
 	//! Holds the unique ID the instance uses to identify itself and others
-	Q_PROPERTY(QString instanceID READ instanceID WRITE setInstanceID NOTIFY instanceIDChanged)
+	Q_PROPERTY(QString instanceID READ instanceID WRITE setInstanceID RESET resetInstanceID NOTIFY instanceIDChanged)
 	//! Specifies whether the instance should try to recover the application or not
 	Q_PROPERTY(bool autoRecovery READ isAutoRecoveryActive WRITE setAutoRecovery NOTIFY autoRecoveryChanged)
+	//! Specifies whether the instance is local (per user) or global (per machine)
+	Q_PROPERTY(bool global READ isGobal WRITE setGlobal)
 
 public:
 	//! Constructor
@@ -33,6 +35,8 @@ public:
 	QString instanceID() const;
 	//! READ-Accessor for QSingleInstance::autoRecovery
 	bool isAutoRecoveryActive() const;
+	//! READ-Accessor for QSingleInstance::global
+	bool isGobal() const;
 
 	//! Sets the function to be called when the application starts
 	bool setStartupFunction(const std::function<int()> &function);
@@ -59,8 +63,12 @@ public slots:
 
 	//! WRITE-Accessor for QSingleInstance::instanceID
 	bool setInstanceID(QString instanceID);
+	//! RESET-Accessor for QSingleInstance::instanceID
+	bool resetInstanceID();
 	//! WRITE-Accessor for QSingleInstance::autoRecovery
 	void setAutoRecovery(bool autoRecovery);
+	//! WRITE-Accessor for QSingleInstance::global
+	bool setGlobal(bool global, bool recreateId = true);
 
 signals:
 	//! Will be emitted if the master receives arguments from another instance
