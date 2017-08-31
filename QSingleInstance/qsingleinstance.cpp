@@ -83,7 +83,7 @@ bool QSingleInstance::process(const QStringList &arguments)
 		return true;
 	else if(!arguments.isEmpty()) {
 		d->client = new QLocalSocket(this);
-		d->client->connectToServer(d->fullId, QIODevice::ReadWrite);
+		d->client->connectToServer(d->socketFile(), QIODevice::ReadWrite);
 		if(d->client->waitForConnected(5000)) {
 			d->performSend(arguments);
 			if(d->client->waitForBytesWritten(5000) && d->client->waitForReadyRead(5000)) {
@@ -163,15 +163,16 @@ bool QSingleInstance::resetInstanceID()
 	d->fullId.truncate(8);
 	d->fullId.prepend(QStringLiteral("qsingleinstance-"));
 	QByteArray hashBase = (QCoreApplication::organizationName() + QLatin1Char('_') + QCoreApplication::applicationName()).toUtf8();
-	d->fullId += QLatin1Char('-') + QString::number(qChecksum(hashBase.data(), hashBase.size()), 16) + QLatin1Char('-');
+	d->fullId += QLatin1Char('-') + QString::number(qChecksum(hashBase.data(), hashBase.size()), 16);
 
 	if(!d->global) {
+		d->fullId += QLatin1Char('-');
 #ifdef Q_OS_WIN
-	DWORD sessID;
-	if(ProcessIdToSessionId(GetCurrentProcessId(), &sessID))
-		d->fullId += QString::number(sessID, 16);
+		DWORD sessID;
+		if(ProcessIdToSessionId(GetCurrentProcessId(), &sessID))
+			d->fullId += QString::number(sessID, 16);
 #else
-	d->fullId += QString::number(::getuid(), 16);
+		d->fullId += QString::number(::getuid(), 16);
 #endif
 	}
 

@@ -4,6 +4,7 @@
 #include <QDir>
 #include <QtEndian>
 #include <QDataStream>
+#include <QStandardPaths>
 #ifdef QT_WIDGETS_LIB
 #include <QApplication>
 #endif
@@ -32,9 +33,21 @@ QSingleInstancePrivate::QSingleInstancePrivate(QSingleInstance *q_ptr) :
 	lockdownTimer(nullptr)
 {}
 
+QString QSingleInstancePrivate::socketFile() const
+{
+#ifdef Q_OS_UNIX
+	auto socket = fullId + QStringLiteral(".socket");
+	if(!global)
+		socket = QDir(QStandardPaths::writableLocation(QStandardPaths::RuntimeLocation)).absoluteFilePath(socket);
+	return socket;
+#else
+	return fullId;
+#endif
+}
+
 void QSingleInstancePrivate::resetLockFile()
 {
-	lockName = QDir::temp().absoluteFilePath(fullId + QStringLiteral("-lockfile"));
+	lockName = QDir::temp().absoluteFilePath(fullId + QStringLiteral(".lock"));
 	lockFile.reset(new QLockFile(lockName));
 	lockFile->setStaleLockTime(0);
 }
@@ -52,11 +65,11 @@ void QSingleInstancePrivate::startInstance()
 			server->setSocketOptions(QLocalServer::WorldAccessOption);
 		else
 			server->setSocketOptions(QLocalServer::UserAccessOption);
-		bool isListening = server->listen(fullId);
+		bool isListening = server->listen(socketFile());
 
 		if (!isListening && server->serverError() == QAbstractSocket::AddressInUseError) {
-			if(QLocalServer::removeServer(fullId))
-				isListening = server->listen(fullId);
+			if(QLocalServer::removeServer(socketFile()))
+				isListening = server->listen(socketFile());
 		}
 
 		if(!isListening) {
@@ -116,7 +129,7 @@ void QSingleInstancePrivate::sendArgs()
 	connect(client, SIGNAL(error(QLocalSocket::LocalSocketError)),
 			this, SLOT(clientError(QLocalSocket::LocalSocketError)));
 
-	client->connectToServer(fullId, QIODevice::ReadWrite);
+	client->connectToServer(socketFile(), QIODevice::ReadWrite);
 
 	lockdownTimer = new QTimer(this);
 	lockdownTimer->setInterval(5000);

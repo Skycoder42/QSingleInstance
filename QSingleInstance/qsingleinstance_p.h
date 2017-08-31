@@ -49,6 +49,7 @@ public:
 
 	QSingleInstancePrivate(QSingleInstance *q_ptr);
 
+	QString socketFile() const;
 	void resetLockFile();
 
 public slots:
