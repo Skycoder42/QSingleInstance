@@ -157,7 +157,7 @@ bool QSingleInstance::resetInstanceID()
 
 	d->fullId = QCoreApplication::applicationName();
 #ifdef Q_OS_WIN
-	d->fullId = fullId.toLower();
+	d->fullId = d->fullId.toLower();
 #endif
 	d->fullId.remove(QRegularExpression(QStringLiteral("[^a-zA-Z0-9_]")));
 	d->fullId.truncate(8);
