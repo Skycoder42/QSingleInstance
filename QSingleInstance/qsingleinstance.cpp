@@ -91,14 +91,14 @@ int QSingleInstance::singleExec(bool autoClose)
 		res = d->startFunc();
 		if(res == EXIT_SUCCESS) {
 			if(autoClose)
-				connect(qApp, &QCoreApplication::aboutToQuit, this, &QSingleInstance::closeInstance);
-			res = qApp->exec();
+				connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this, &QSingleInstance::closeInstance);
+			res = QCoreApplication::exec();
 		} else if(autoClose)
 			closeInstance();
 	} else {
 		d->autoClose = autoClose; //store in case of recovery
 		d->sendArgs();
-		res = qApp->exec();
+		res = QCoreApplication::exec();
 		d->autoClose = false; //and reset
 	}
 

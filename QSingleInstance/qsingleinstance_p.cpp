@@ -84,11 +84,11 @@ void QSingleInstancePrivate::recover(int exitCode)
 		auto res = startFunc();
 		if(res == EXIT_SUCCESS) {
 			if(autoClose)
-				connect(qApp, &QCoreApplication::aboutToQuit, q, &QSingleInstance::closeInstance);
+				connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, q, &QSingleInstance::closeInstance);
 		} else if(autoClose)
 			q->closeInstance();
 	 } else
-		qApp->exit(exitCode);
+		QCoreApplication::exit(exitCode);
 }
 
 bool QSingleInstancePrivate::recoverAction()
@@ -153,7 +153,7 @@ void QSingleInstancePrivate::sendResultReady()
 			lockdownTimer->stop();
 			client->disconnect();
 			client->close();
-			qApp->quit();
+			QCoreApplication::quit();
 		} else {
 			qCWarning(logQSingleInstance) << "Master didn't ackknowledge the sent arguments";
 			recover(QLocalSocket::UnknownSocketError);
