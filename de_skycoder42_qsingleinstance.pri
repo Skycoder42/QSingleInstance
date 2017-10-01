@@ -1,5 +1,5 @@
 QT *= network
-qpmx_static: QT += gui widgets
+qpmx_static: QT -= gui widgets
 
 PUBLIC_HEADERS += \
 	$$PWD/QSingleInstance/qsingleinstance.h

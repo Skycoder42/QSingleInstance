@@ -5,10 +5,13 @@
 #include <QLoggingCategory>
 #include <functional>
 #ifdef QT_GUI_LIB
-class QWindow;
+#include <QPointer>
+#include <QWindow>
 #endif
 #ifdef QT_WIDGETS_LIB
-class QWidget;
+#include <QPointer>
+#include <QWidget>
+#include <QApplication>
 #endif
 
 class QSingleInstancePrivate;
@@ -42,10 +45,12 @@ public:
 	bool setStartupFunction(const std::function<int()> &function);
 #ifdef QT_GUI_LIB
 	//! Sets a window to be activted on new received arguments
+	template <typename T = void>
 	void setNotifyWindow(QWindow *window);
 #endif
 #ifdef QT_WIDGETS_LIB
 	//! Sets a window to be activted on new received arguments
+	template <typename T = void>
 	void setNotifyWindow(QWidget *widget);
 #endif
 
@@ -81,9 +86,44 @@ signals:
 
 private:
 	QSingleInstancePrivate *d;
+
+	void setNotifyWindowFn(const std::function<void()> &fn);
 };
 
 Q_DECLARE_LOGGING_CATEGORY(logQSingleInstance)
+
+#ifdef QT_GUI_LIB
+template <typename T>
+void QSingleInstance::setNotifyWindow(QWindow *window)
+{
+	QPointer<QWindow> notifyWindow(window);
+	setNotifyWindowFn([notifyWindow](){
+		if(!notifyWindow.isNull()) {
+			notifyWindow->show();
+			notifyWindow->raise();
+			notifyWindow->alert(0);
+			notifyWindow->requestActivate();
+		}
+	});
+}
+#endif
+
+#ifdef QT_WIDGETS_LIB
+template <typename T>
+void QSingleInstance::setNotifyWindow(QWidget *widget)
+{
+	QPointer<QWidget> notifyWidget(widget);
+	setNotifyWindowFn([notifyWidget](){
+		if(!notifyWidget.isNull()) {
+			notifyWidget->setWindowState(notifyWidget->windowState() & ~ Qt::WindowMinimized);
+			notifyWidget->show();
+			notifyWidget->raise();
+			QApplication::alert(notifyWidget);
+			notifyWidget->activateWindow();
+		}
+	});
+}
+#endif
 
 #endif // QSINGLEINSTANCEBASE
 

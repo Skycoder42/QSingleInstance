@@ -7,14 +7,6 @@
 #include <QLocalSocket>
 #include <QScopedPointer>
 #include <QTimer>
-#ifdef QT_GUI_LIB
-#include <QPointer>
-#include <QWindow>
-#endif
-#ifdef QT_WIDGETS_LIB
-#include <QPointer>
-#include <QWidget>
-#endif
 #include "qsingleinstance.h"
 
 #define ACK QByteArray("ACK")
@@ -37,12 +29,7 @@ public:
 
 	bool isRunning;
 	std::function<int()> startFunc;
-#ifdef QT_GUI_LIB
-	QPointer<QWindow> notifyWindow;
-#endif
-#ifdef QT_WIDGETS_LIB
-	QPointer<QWidget> notifyWidget;
-#endif
+	std::function<void()> notifyFn;
 
 	QLocalSocket *client;
 	QTimer *lockdownTimer;

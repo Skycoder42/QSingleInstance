@@ -5,9 +5,6 @@
 #include <QtEndian>
 #include <QDataStream>
 #include <QStandardPaths>
-#ifdef QT_WIDGETS_LIB
-#include <QApplication>
-#endif
 #include "clientinstance.h"
 
 QSingleInstancePrivate::QSingleInstancePrivate(QSingleInstance *q_ptr) :
@@ -23,12 +20,7 @@ QSingleInstancePrivate::QSingleInstancePrivate(QSingleInstance *q_ptr) :
 	autoClose(false),
 	isRunning(false),
 	startFunc([]()->int{return 0;}),
-#ifdef QT_GUI_LIB
-	notifyWindow(nullptr),
-#endif
-#ifdef QT_WIDGETS_LIB
-	notifyWidget(nullptr),
-#endif
+	notifyFn(),
 	client(nullptr),
 	lockdownTimer(nullptr)
 {}
@@ -187,23 +179,8 @@ void QSingleInstancePrivate::newConnection()
 
 void QSingleInstancePrivate::newArgsReceived(const QStringList &args)
 {
-#ifdef QT_GUI_LIB
-	if(!notifyWindow.isNull()) {
-		notifyWindow->show();
-		notifyWindow->raise();
-		notifyWindow->alert(0);
-		notifyWindow->requestActivate();
-	}
-#endif
-#ifdef QT_WIDGETS_LIB
-	if(!notifyWidget.isNull()) {
-		notifyWidget->setWindowState(notifyWidget->windowState() & ~ Qt::WindowMinimized);
-		notifyWidget->show();
-		notifyWidget->raise();
-		QApplication::alert(notifyWidget);
-		notifyWidget->activateWindow();
-	}
-#endif
+	if(notifyFn)
+		notifyFn();
 	QMetaObject::invokeMethod(q, "instanceMessage", Qt::QueuedConnection,
 							  Q_ARG(QStringList, args));
 }

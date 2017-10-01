@@ -50,26 +50,6 @@ bool QSingleInstance::setStartupFunction(const std::function<int()> &function)
 	}
 }
 
-#ifdef QT_GUI_LIB
-void QSingleInstance::setNotifyWindow(QWindow *window)
-{
-	d->notifyWindow = window;
-#ifdef QT_WIDGETS_LIB
-	d->notifyWidget = nullptr;
-#endif
-}
-#endif
-
-#ifdef QT_WIDGETS_LIB
-void QSingleInstance::setNotifyWindow(QWidget *widget)
-{
-	d->notifyWidget = widget;
-#ifdef QT_GUI_LIB
-	d->notifyWindow = nullptr;
-#endif
-}
-#endif
-
 bool QSingleInstance::process()
 {
 	return process(QCoreApplication::arguments());
@@ -199,4 +179,9 @@ bool QSingleInstance::setGlobal(bool global, bool recreateId)
 		else
 			return true;
 	}
+}
+
+void QSingleInstance::setNotifyWindowFn(const std::function<void ()> &fn)
+{
+	d->notifyFn = fn;
 }
