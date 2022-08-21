@@ -11,8 +11,12 @@ ClientInstance::ClientInstance(QLocalSocket *socket, QSingleInstancePrivate *par
 	stream(socket)
 {
 	connect(socket, &QLocalSocket::readyRead, this, &ClientInstance::newData);
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
 	connect(socket, QOverload<QLocalSocket::LocalSocketError>::of(&QLocalSocket::error),
 			this, &ClientInstance::socketError);
+#else
+	connect(socket, &QLocalSocket::errorOccurred, this, &ClientInstance::socketError);
+#endif
 	connect(socket, &QLocalSocket::disconnected, this, &ClientInstance::deleteLater);
 }
 

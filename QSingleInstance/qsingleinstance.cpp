@@ -143,7 +143,12 @@ bool QSingleInstance::resetInstanceID()
 	d->fullId.truncate(8);
 	d->fullId.prepend(QStringLiteral("qsingleinstance-"));
 	QByteArray hashBase = (QCoreApplication::organizationName() + QLatin1Char('_') + QCoreApplication::applicationName()).toUtf8();
-	d->fullId += QLatin1Char('-') + QString::number(qChecksum(hashBase.data(), hashBase.size()), 16);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+	quint16 hashValue = qChecksum(hashBase.data(), hashBase.size());
+#else
+	quint16 hashValue = qChecksum(hashBase);
+#endif
+	d->fullId += QLatin1Char('-') + QString::number(hashValue, 16);
 
 	if(!d->global) {
 		d->fullId += QLatin1Char('-');
