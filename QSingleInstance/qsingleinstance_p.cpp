@@ -118,8 +118,13 @@ void QSingleInstancePrivate::sendArgs()
 			this, &QSingleInstancePrivate::clientConnected, Qt::QueuedConnection);
 	connect(client, &QLocalSocket::readyRead,
 			this, &QSingleInstancePrivate::sendResultReady, Qt::QueuedConnection);
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
 	connect(client, SIGNAL(error(QLocalSocket::LocalSocketError)),
 			this, SLOT(clientError(QLocalSocket::LocalSocketError)));
+#else
+	connect(client, SIGNAL(errorOccurred(QLocalSocket::LocalSocketError)),
+			this, SLOT(clientError(QLocalSocket::LocalSocketError)));
+#endif
 
 	client->connectToServer(socketFile(), QIODevice::ReadWrite);
 
